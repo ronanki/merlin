@@ -140,8 +140,9 @@ class VanillaRNNDecoder(object):
 
 
         self.Wix = T.dot(self.input, self.W_xi)
+	self.Uix = T.dot(self.input, self.U_xi)
         
-        [self.h, self.c, self.y], _ = theano.scan(self.recurrent_as_activation_function, sequences = [self.Wix],
+        [self.h, self.c, self.y], _ = theano.scan(self.recurrent_as_activation_function, sequences = [self.Wix, self.Uix],
                                                                       outputs_info = [self.h0, self.c0, self.y0]) 
 
         self.output = self.y
@@ -154,7 +155,7 @@ class VanillaRNNDecoder(object):
         self.L2_cost = (self.W_xi ** 2).sum() + (self.W_hi ** 2).sum() + (self.W_yi ** 2).sum() + (self.U_hi ** 2).sum() 
 
 
-    def recurrent_as_activation_function(self, Wix, h_tm1, c_tm1, y_tm1):
+    def recurrent_as_activation_function(self, Wix, Uix, h_tm1, c_tm1, y_tm1):
         """ Implement the recurrent unit as an activation function. This function is called by self.__init__().
         
         :param Wix: it equals to W^{hx}x_{t}, as it does not relate with recurrent, pre-calculate the value for fast computation
@@ -167,10 +168,7 @@ class VanillaRNNDecoder(object):
         
         h_t = T.tanh(Wix + T.dot(self.W_hi, h_tm1) + T.dot(y_tm1, self.W_yi) + self.b_i)  #
 
-        y_t = T.dot(h_t, self.U_hi) + self.b
-
-        # Still in testing mode
-        #y_t = T.dot(h_t, self.U_hi) + T.dot(self.input, self.U_xi) + T.dot(y_tm1, self.U_yi) + self.b
+        y_t = Uix + T.dot(h_t, self.U_hi) + T.dot(y_tm1, self.U_yi) + self.b
 
         c_t = h_t
 
